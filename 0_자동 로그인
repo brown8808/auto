@@ -1,0 +1,81 @@
+import time
+import subprocess
+import sys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver import ActionChains
+
+
+# 아래 주석처리 예외시 크롬창 오픈
+subprocess.Popen(r'C:\Program Files\Google\Chrome\Application\chrome.exe --remote-debugging-port=9222 --user-data-dir="C:\chrometemp"')
+
+option = Options()
+option.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
+driver = webdriver.Chrome(options=option)
+
+driver.maximize_window()
+
+
+# 보안 예외 처리 / 아이디 or 비번을 코드 상에 문자열로 직접 입력했을때, 코드 공개시 정보가 유출됨
+# 이를 방지하기 위해 vscode 경로에 메모장을 생성 후 개인 정보를 보관
+
+with open("hide.txt") as f: # 예외처리 기능이 포함된 파일 열기 코드
+    lines =f.readlines() # 파일에서 모든 줄(line)을 읽어서 파이썬 리스트로 저장
+    cpg = lines[0].strip() # line[0] 번(id)을 읽은 후 strip() 메서드를 호출하여 좌우 공백을 제거한 문자열을 id라는 변수로 바인딩
+    password = lines[1].strip() # line[0] 번(id)을 읽은 후 strip() 메서드를 호출하여 좌우 공백을 제거한 문자열을 id라는 변수로 바인딩
+    okta = lines[2].strip() # line[1] 번(password)을 읽은 후 strip() 메서드를 호출하여 좌우 공백을 제거한 문자열을 id라는 변수로 바인딩
+
+# 구글 접속
+driver.get('https://www.google.com/')
+
+# cpg 로그인 되어 있다면 클로즈
+try: 
+    elem = WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.LINK_TEXT, "로그인")))
+    elem.click()
+except:
+    driver.close()
+    print("로그인이 되어 있습니다.")
+    driver.quit()
+    sys.exit()
+
+action = ActionChains(driver)
+
+
+# 로그인이 필요한 경우
+time.sleep(3)
+
+
+def login():
+    elem = driver.find_element(By.NAME, 'username')
+    action.double_click(elem).send_keys(Keys.DELETE).send_keys(okta).send_keys(Keys.ENTER)
+    action.perform()
+
+    time.sleep(3)
+    driver.find_element(By.NAME, 'password').send_keys(password)
+    driver.find_element(By.NAME, 'password').send_keys(Keys.ENTER)
+    time.sleep(7)
+    try:
+        driver.find_element(By.CLASS_NAME, 'VfPpkd-vQzf8d').click() # 계속
+        time.sleep(1)
+        driver.close()
+        driver.quit()
+        sys.exit()
+    except:
+        driver.close()
+        driver.quit()
+        sys.exit()
+
+try:
+    elem = driver.find_element(By.NAME, 'identifier')
+    action.double_click(elem).send_keys(Keys.DELETE).send_keys(cpg).send_keys(Keys.ENTER)
+    action.perform()
+
+    time.sleep(7)
+except:
+    login()
+
+login()
