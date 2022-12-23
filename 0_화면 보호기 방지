@@ -1,0 +1,22 @@
+import pyautogui
+import time
+import schedule
+from datetime import datetime
+
+def go():
+   now = datetime.now()
+   t = now.strftime('%y/%m/%d %H:%M:%S')
+   pyautogui.move(380, 0, duration=1)
+   pyautogui.move(-307, 223, duration=1)
+   pyautogui.move(117, -361, duration=1)
+   pyautogui.move(117, 361, duration=1)
+   pyautogui.move(-307, -223, duration=1)
+   pyautogui.click()
+   print(t)
+
+
+schedule.every(10).seconds.do(go)
+
+while True:
+   schedule.run_pending()
+   time.sleep(1)
