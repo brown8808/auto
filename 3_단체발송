@@ -1,0 +1,41 @@
+import winsound
+import pyautogui
+import pyperclip
+import time
+import schedule
+
+
+message = '전달 메세지 입력'
+
+
+
+# 관리자 단어를 포함하는 윈도우를 활성화
+for a in pyautogui.getWindowsWithTitle('카카오톡채널 관리자센터 - Chrome'):
+   if a.isActive == False:
+      a.activate()
+
+time.sleep(1)
+pyautogui.hotkey('ctrl', 'end')
+
+# 오전이라는 글자를 찾아 모두 클릭
+for i in pyautogui.locateAllOnScreen('kakao_open.png', confidence=0.75):
+   pyautogui.click(i, duration=0.1)
+
+time.sleep(5)
+
+# 포커싱 환기
+for a in pyautogui.getWindowsWithTitle('카카오톡채널 관리자센터 - Chrome'):
+   if a.isActive == False: 
+      a.activate()
+
+# 단체 문자 작업
+for w in pyautogui.getWindowsWithTitle('노리') : # 노리를 포함하는 윈도우에 모두 실행
+   if w.isActive == False: # 현재 활성화가 되지 않았다면
+      w.activate() # 활성화 ( 맨 앞으로 가져오기)
+      pyperclip.copy(message) # 클립 보드에 복사
+      pyautogui.sleep(0.5)
+      pyautogui.hotkey("ctrl", "v") # 붙여 넣기
+      pyautogui.sleep(0.5)
+      pyautogui.press("enter")
+      pyautogui.sleep(0.5)
+      w.close() # 윈도우 닫기
