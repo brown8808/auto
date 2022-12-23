@@ -1,0 +1,130 @@
+import subprocess
+import time
+import pyautogui
+import pyperclip
+import win32com.client
+import os
+import datetime
+import pandas as pd
+import winsound
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver import ActionChains
+from openpyxl import Workbook
+
+
+option = Options()
+
+option.add_experimental_option('prefs',{'download.default_directory':r'C:\HH'})  # 해당 크롬에서 파일 다운로드시 원하는 경로에 저장하기 위한 옵션 추가
+
+driver = webdriver.Chrome(options=option)
+driver.maximize_window()
+
+# 보안 예외 처리 / 아이디 or 비번을 코드 상에 문자열로 직접 입력했을때, 코드 공개시 정보가 유출됨
+# 이를 방지하기 위해 vscode 경로에 메모장을 생성 후 개인 정보를 보관
+
+with open("hide.txt") as f: # 예외처리 기능이 포함된 파일 열기 코드
+    lines =f.readlines() # 파일에서 모든 줄(line)을 읽어서 파이썬 리스트로 저장
+    t_id = lines[0].strip() # line[0] 번(id)을 읽은 후 strip() 메서드를 호출하여 좌우 공백을 제거한 문자열을 해당 변수로 바인딩
+    t_password = lines[1].strip() # line[1] 번(password)을 읽은 후 strip() 메서드를 호출하여 좌우 공백을 제거한 문자열을 해당 변수로 바인딩
+
+driver.get('') # 사이트 접속
+
+# 사이트 로그인 및 파일 다운로드
+time.sleep(3)
+driver.find_element(By.NAME, 'username').send_keys(t_id)
+driver.find_element(By.NAME, 'username').send_keys(Keys.ENTER)
+time.sleep(5)
+driver.find_element(By.NAME, 'password').send_keys(t_password)
+driver.find_element(By.NAME, 'password').send_keys(Keys.ENTER)
+time.sleep(5)
+driver.find_element(By.XPATH, '//*[@id="main-container"]/div[3]/div/div/div[2]/div/div[1]/span[1]').click() 
+time.sleep(3)
+driver.find_element(By.XPATH, '//*[@id="main-container"]/div[3]/div/div[2]/div[2]/div/div/div[1]/div[2]/table/tbody/tr[2]/th[4]/a').click()
+time.sleep(3)
+driver.find_element(By.XPATH, '//*[@id="detailModal"]/div[2]/div/div[3]/div[1]/div[2]/div/button[1]').click()
+time.sleep(3)
+
+curr_handle = driver.current_window_handle
+print(curr_handle) # 현재 윈도우 핸들 정보를 출력
+
+
+handles = driver.window_handles # 모든 핸들 정보를 가져오기
+for handle in handles:
+    print(handle) # 각 핸들 정보
+    driver.switch_to.window(handle) # 각 핸들로 이동해서
+    print(driver.title) # 출력해보면 현재 핸들 (브라우저) 의 제목 표시
+
+time.sleep(3)
+
+driver.maximize_window()
+
+time.sleep(3)
+
+driver.find_element(By.XPATH, '//*[@id="grid-pager_left"]/table/tbody/tr/td[2]/div').click() # 엑셀 다운로드
+time.sleep(3)
+driver.close()
+
+handles = driver.window_handles # 모든 핸들 정보를 가져오기
+for handle in handles:
+    print(handle) # 각 핸들 정보
+    driver.switch_to.window(handle) # 각 핸들로 이동해서
+    print(driver.title) # 출력해보면 현재 핸들 (브라우저) 의 제목 표시
+
+time.sleep(3)
+
+
+# 기본 셋팅
+driver.find_element(By.CLASS_NAME, 'close').click() # 팝업 닫기
+time.sleep(3)
+driver.get('') # 화면 바로가기
+time.sleep(3)
+driver.find_element(By.CLASS_NAME, 'close').click() # 팝업 닫기
+driver.find_element(By.XPATH, '//*[@id="workerId"]/option[contains(text(), "스")]').click() # 해당 XPATH 값을 찾아서 텍스트가 '스'와 부분 일치하는 옵션을 선택
+driver.find_element(By.XPATH, '//*[@id="reasonCode"]/option[contains(text(), "미")]').click() # 해당 XPATH 값을 찾아서 텍스트가 '미'와 부분 일치하는 옵션을 선택
+driver.find_element(By.ID, 'detailReasonText').send_keys('캔') # 상세사유칸에 '캔' 입력
+elem = driver.find_element(By.ID, 'invoiceBarcode') # 번호 기입란을 elem으로 바인딩
+
+now = datetime.datetime.now() # 지금 시각
+t = now.strftime('%y_%m_%d') # 지금 시각을 원하는 문자열로 변환
+newpath = t + '_출발리스트.csv' #  문자열 + 해당 이름으로 문서명
+path = r'리스트.csv' # 최초 다운로드시 저장되어있는 문서명을 path로 바인딩
+os.rename(path, newpath) # 위의 기존 문서를 새 문서명으로 변환
+
+
+data = pd.read_csv(newpath) # 판다스로 csv 파일 가져오기
+num = 0
+lastnum = data['InvoiceNumber'].tail(1) # 읽어온 cvs파일의 InvoiceNumber 열의 마지막 행 확인
+print(lastnum)
+
+#------------------- 작업자 목록 예시
+w_ids = [
+    'scan1'
+    'scan2'
+    'scan3'
+    'scan4'
+    'scan5'
+]
+
+result = 0
+
+try:
+    while True:
+        invoice = data['InvoiceNumber'][num] # 최초 0번(1번째) 운송장을 invoice로 바인딩
+        worker = data['Worker'][num] # 최초 0번(1번째) 작업자를 worker로 바인딩
+        for w_id in w_ids: # w_id를 모두 w_ids에 대입
+            if worker in w_id: # w_id 인자를 worker로 설정 / w_id가 w_ids 목록에 있다면
+                elem.send_keys(int(invoice)) # 위의 엘리먼트에 해당 운송장 번호 기입
+                elem.send_keys(Keys.ENTER) # 엔터
+                print(invoice, '는 워커가', worker, '이므로 출발')
+                result = result + 1
+            else:
+                pass
+        num = num + 1 # 기존 번호 + 1 / 한바퀴 돌때마다 계속 +1씩 더함
+        time.sleep(1.2) # 누락 방지를 위한 타임슬립
+        winsound.Beep(500, 500) # 작동 여부를 확인하기 위한 비프음
+except: # 빈칸 복사 시도시 오류가 생김
+    print('총', str(len(data['InvoiceNumber'])) + '개 중', str(result) + '개 출발 처리 완료') # 오류 발생시 총 운송장 개수 출력
+    os.remove(newpath) # 다운로드 후 파일명을 변환한 csv 파일을 제거
